@@ -1,0 +1,56 @@
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore environment and dependency files
+.env
+env/
+venv/
+env.bak/
+env1/
+env2/
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+bin/
+lib/
+lib64/
+*.egg
+*.egg-info
+.installed.cfg
+*.egg-info/
+.installed.cfg/
+*.egg-info/
+.installed.cfg/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore IDE-specific files
+.vscode/
+.idea/
+*.code-workspace
+
+# Ignore system-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore log files
+*.log
+logs/
+
+# Ignore compiled code and binaries
+*.so
+*.dll
+*.pyd
+*.exe
+*.out
+
+# Ignore caches
+.cache/
