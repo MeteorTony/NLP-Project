@@ -1,60 +1,76 @@
 import autogen      # "pip install pyautogen" first
 import os
+from dotenv import load_dotenv
 
-# TODO: just temporary, not working
-key = "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"
+# Load environment variables from .env file
+load_dotenv()
 
-config_list = [{"model": "gpt-4", "api_key": key}]
+config_list = [
+  {
+    "model": "gpt-35-turbo",
+    "api_type": "azure",
+    "api_key": os.getenv("API_KEY"),
+    "base_url": "https://hkust.azure-api.net",
+    "api_version": "2023-05-15"
+  }
+]
 
 llm_config = {
     "config_list": config_list,
     "cache_seed": 41,  # seed for caching and reproducibility
     "temperature": 0.5,  # temperature for sampling
-
 }
 
+# executor agent
 executor = autogen.AssistantAgent(
     name="executor",
-    system_message="""
-   You love telling jokes. After Alice feedback improve 
-   the joke. Say 'TERMINATE' when you have improved the joke.
-""",
+    system_message="""Your role as an Executor Agent involves implementing algorithms, performing computations, 
+    and executing automated actions within the system. Your responsibilities include task execution, algorithmic 
+    processing, resource management, error handling, and effective communication with other agents. Your efficient 
+    task execution and accurate results contribute to the overall success of our multi-agent system. """,
     llm_config=llm_config,
-)
-
-observer = autogen.AssistantAgent(
-    name="observer",
-    system_message="""
-   You should make sure the joke created by the executor is funny enough.
-""",
-    llm_config=llm_config,
-)
-
-user_proxy = autogen.UserProxyAgent(
-    name="user_proxy",
-    human_input_mode="NEVER",       # Never ask for human input
-    max_consecutive_auto_reply=10,
-    system_message="A human admin.",
-    is_termination_msg=lambda msg: msg.get("content", "").rstrip().endswith("TERMINATE"),
     code_execution_config={
-        "last_n_messages": 2,
-        "work_dir": "groupchat",
         "use_docker": False,
     },
 )
 
-groupchat = autogen.GroupChat(agents=[user_proxy, observer, executor], messages=[], max_round=6)
-manager = autogen.GroupChatManager(groupchat=groupchat, llm_config=llm_config)
-#
-# assistant receives a message from user_proxy (contains task description)
+# observer agent
+observer = autogen.AssistantAgent(
+    name="observer",
+    system_message="""As an Observer Agent, you are responsible for observing, analyzing, and reporting on various 
+    aspects of the system and its interactions. Your main responsibilities include system monitoring, 
+    data collection, and analysis the responses from the executor agent. By identifying potential issues, anomalies, 
+    and patterns, you help maintain system stability and performance.""",
+    llm_config=llm_config,
+)
+
+# user proxy agent
+user_proxy = autogen.UserProxyAgent(
+    name="user_proxy",
+    human_input_mode="NEVER",       # Never ask for human input
+    system_message="A human admin.",
+    is_termination_msg=lambda msg: msg.get("content", "").rstrip().endswith("TERMINATE"),
+    code_execution_config={
+        "use_docker": False,
+    },
+)
+
+# 3 group member agents and 1 manager agent
+groupChat = autogen.GroupChat(agents=[user_proxy, observer, executor], messages=[], max_round=4)
+
+# group chat manager
+manager = autogen.GroupChatManager(
+    groupchat=groupChat,
+    llm_config=llm_config,
+    is_termination_msg=lambda msg: msg.get("content", "").rstrip().endswith("TERMINATE"),
+)
+
 chat_res = user_proxy.initiate_chat(
     manager,
-    message="""What date is today? Compare the year-to-date gain for META and TESLA.""",
+    message="""Find a latest paper about gpt-4 on arxiv and find its potential applications in software.""",
     summary_method="reflection_with_llm",
-    max_turns=6,
 )
 
 print("Chat history:", chat_res.chat_history)
-
 print("Summary:", chat_res.summary)
 print("Cost info:", chat_res.cost)
